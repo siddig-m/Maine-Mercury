@@ -1,0 +1,206 @@
+---
+author: "Siddig Mohamed"
+date: "20/02/2023"
+output:
+  word_document: default
+  html_document: default
+---
+
+## import data
+```{r}
+#read txt
+lakes = read.table("Assignment2_2023_Data.txt")
+# add column names to df
+colnames(lakes) = c("NAME",
+              "HG",
+              "N",
+              "ELV",
+              "SA",
+              "Z",              
+              "LT",
+              "ST",
+              "DA",
+              "RF",
+              "FR",
+              "DAM",
+              "LAT1",
+              "LAT2",
+              "LAT3",
+              "LONG1",
+              "LONG2",
+              "LONG3")
+
+```
+
+```{r}
+#install.packages("ggmap")
+library(ggmap)
+
+lakes$longitude = -(lakes$LONG1 + lakes$LONG2/60 + lakes$LONG3/3600)
+lakes$latitude = (lakes$LAT1 + lakes$LAT2/60 + lakes$LAT3/3600)
+register_google(key = "AIzaSyBhHpnrFuM8iu5oXrJvmyvCDt_6tlTyZ0k")
+# Get background map for Chicago
+maine <- get_map(location = "maine", zoom = 7)
+# Basic point plot
+ggmap(maine) + geom_point(data = lakes, aes(x = longitude, y = latitude))+
+theme_bw() +
+theme(axis.line = element_blank(),
+ axis.text = element_blank(),
+ axis.title=element_blank(),
+ axis.ticks = element_blank(),
+ legend.key = element_blank(),
+ panel.grid.major = element_blank(),
+ panel.grid.minor = element_blank(),
+ panel.border = element_blank(),
+ panel.background = element_blank())
+
+ggsave("maine_lakes.png")
+```
+
+
+
+# 1) Concerning Hg Levels?
+```{r}
+
+library(ggplot2)
+outlier_index = which.max(lakes$HG)
+med_hg = median(lakes$HG)
+
+ggplot(data = lakes, aes(x= HG)) + 
+  geom_histogram(col = "black")+
+  labs(x = "Mercury Levels", y = "Frequency")+
+  ggtitle("Distribution of Maine Lakes Mercury Levels")+
+  geom_text(aes(x = HG[outlier_index], y = 0, label = NAME[outlier_index]), 
+            vjust = -2, hjust = 1, size = 5)+
+  theme(plot.title = element_text(hjust =0.5))
+
+
+ggsave("hg_histogram.png")
+
+```
+The data looks approximately normal, however, it is still slightly right-skewed. Especially with the Hodgdon.P value with a mercury level of about 2.5.
+## Summary Stats number of lakes greater than thresholds
+```{r}
+mean(lakes$HG)
+sum(lakes$HG >= 0.43)/120
+sum(lakes$HG >= 0.5)/120
+sum(lakes$HG >= 1)/120
+
+```
+
+Upon first inspection, mercury levels in lakes in Maine do seem to be of concern. 
+About 50% of lakes are issuing a mercury threshold warning using the 0.43 threshold
+About 37.5% of lakes are issuing a mercury threshold warning using the 0.50 threshold
+Only about 5% of lakes are currently considered unsafe. 
+
+## Possible Transformation 
+```{r}
+library(MASS)
+library(car)
+bc = boxcox(lakes$HG ~ 1)
+
+plot(bc$x, bc$y, type = "l", xlab = "lambda", ylab = "log-likelihood")
+abline(v = bc$x[which.max(bc$y)], lty = 2)
+lambda <- bc$x[which.max(bc$y)]
+lambda = 1/2
+x_bc <- sqrt(lakes$HG)
+
+```
+
+## Checking Normality Assumption for T-Test
+```{r}
+
+shapiro.test(x_bc)
+shapiro.test(lakes$HG)
+
+
+hist(x_bc,breaks = 12)
+
+
+```
+The data although not very normal and still not normal after transformation. However, since n is large with 120 observations we can allow this sample means to be approximately normal. The transformed sample will also be disregarded as it doesn't provide normality and is more complex to interpret.
+
+## One Sample t-test
+
+H0 = mean mercury level in maine is <= 0.43
+H1 = mean mercury level in maine is > 0.43
+```{r}
+# Maine
+t.test(lakes$HG, mu = 0.43, alternative = "greater")
+# Other States
+t.test(lakes$HG, mu = 0.50, alternative = "greater")
+# Unsafe
+t.test(lakes$HG, mu = 1, alternative = "greater")
+
+```
+Conclusions:
+
+Maine: Marginal evidence that the mean is above warning level in Maine of 0.43. 
+Other states: Weak evidence that Maine is of concern compared to other states.
+Unsafe: Weak evidence that Maine is of high concern when compared to the unsafe level.
+
+
+# 2) Prescence of Dam or other infrastrucuure?
+
+
+## Boxplot Comparison
+```{r}
+ggplot(lakes, aes(x = DAM, y = HG, fill = factor(DAM))) +
+  geom_boxplot(outlier.size = 2) +
+  labs(title = "Mercury Levels vs. Prescence of Dam",
+       x = "DAM Indicator",
+       y = "Mercury Levels",
+       fill = "Presence of Dam") +
+  scale_fill_discrete(labels = c("No Dam", "Dam"))+
+  theme(plot.title = element_text(hjust =0.5))
+
+ggsave("dam_boxplot.png")
+
+```
+
+Mercury levels appear to be slightly higher in instances where a dam is not present but it is hard to tell.
+
+## Two-Sided t-test
+
+H0: The difference of mean of both groups, dam and no dam is = 0.
+H1: The difference of mean of both groups, dam and no dam is not = 0.
+```{r}
+t.test(lakes$HG[lakes$DAM == 1],lakes$HG[lakes$DAM == 0], alternative = "two.sided")
+```
+Since the p-value is large (> 0.05) we fail to reject the null hypothesis and conclude there isn't a significant difference between the two groups. Thus the data doesn't support this claim.
+
+# 3) Oligo vs. Mesotrophic .vs Eutro
+```{r}
+ggplot(lakes, aes(x = LT, y = HG, fill = factor(LT))) +
+  geom_boxplot(outlier.size = 2) +
+  scale_fill_manual(values = c("black", "blue", "red")) +
+  labs(title = "Mercury Levels by Laketype",
+       x = "Lake Type",
+       y = "Mercury Levels",
+       fill = "Lake Type") +
+  scale_fill_discrete(labels = c("Oligotrophic", "Eutrophic", "Mesotrophic"))+
+  theme(plot.title = element_text(hjust =0.5))
+
+ggsave("laketype_boxplots.png")
+```
+
+Upon first examination this claim already seems to be false. However, performing an ANOVA on the mean of the three groups we can check if there is a significant difference between the lake types. 
+## ANOVA Test
+H0: There is no difference among group means
+H1: at least on group differs significantly from the overall mean
+
+```{r}
+
+lake_type_aov = aov(HG ~ LT, data = lakes)
+
+summary(lake_type_aov)
+```
+Large p-value indicates the failure to reject null hypothesis. This indicates that there is no significant difference among the means and thus we can say that mercury level does not vary by lake type.
+
+## Check Assumptions
+```{r}
+# homogeneity of variance
+
+plot(lake_type_aov, 1)
+plot(lake_type_aov, 2)
+```
