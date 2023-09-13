@@ -27,20 +27,20 @@ We use three methods to address the research questions:
 - There is no significant difference in mercury levels among different lake types (oligotrophic, mesotrophic, eutrophic).
 <div style="display: flex; align-items: center;">
   <!-- Mercury Levels Histogram -->
-  <div style="flex: 1; margin-right: 10px;">
-    <img src="https://github.com/siddig-m/Maine-Mercury/assets/55728795/6203df13-5c9a-4520-a847-37aaacabd6de" width="400" height="300">
+  <div style="flex: 1;">
+    <img src="https://github.com/siddig-m/Maine-Mercury/assets/55728795/6203df13-5c9a-4520-a847-37aaacabd6de" width="500" height="350">
     <p style="text-align: center;">Mercury Levels Histogram</p>
   </div>
 
   <!-- Mercury Levels Near Dams (Box Plot) -->
   <div style="flex: 1; margin-right: 10px;">
-    <img src="https://github.com/siddig-m/Maine-Mercury/assets/55728795/604edf1b-e455-4102-9ff3-01254e914c48" width="400" height="300">
+    <img src="https://github.com/siddig-m/Maine-Mercury/assets/55728795/604edf1b-e455-4102-9ff3-01254e914c48" width="500" height="350">
     <p style="text-align: center;">Mercury Levels Near Dams (Box Plot)</p>
   </div>
 
   <!-- Mercury Levels by Lake Type (Box Plots) -->
   <div style="flex: 1;">
-    <img src="https://github.com/siddig-m/Maine-Mercury/assets/55728795/80d7a3a4-33d5-430a-8ebf-c1169537cb84" width="400" height="300">
+    <img src="https://github.com/siddig-m/Maine-Mercury/assets/55728795/80d7a3a4-33d5-430a-8ebf-c1169537cb84" width="500" height="350">
     <p style="text-align: center;">Mercury Levels by Lake Type (Box Plots)</p>
   </div>
 </div>
